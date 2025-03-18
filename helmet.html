@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helmet Game</title>
+</head>
+<body>
+  <script>
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    document.body.appendChild(canvas);
+    canvas.width = 400;
+    canvas.height = 300;
+
+    document.body.style.textAlign = "center";
+    const scoreDisplay = document.createElement("div");
+    scoreDisplay.style.fontSize = "20px";
+    scoreDisplay.style.marginBottom = "10px";
+    document.body.insertBefore(scoreDisplay, canvas);
+
+    let player = { x: 180, y: 260, width: 40, height: 40, img: new Image(), facingRight: true };
+    const rightCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
+    const leftCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
+    player.img.src = rightCatImage;
+
+    let obstacles = [];
+    let gameOver = false;
+    let score = 0;
+    let obstacleSpeed = 3;
+    let spawnInterval = 800;
+    let scoreUpPlayed = false;
+    let initialObstacleSpeed = obstacleSpeed;
+    let spawnTimer;
+    let starCount = 0;
+
+    const moveSound = new Audio("https://www.myinstants.com/media/sounds/jump-sound.mp3");
+    const starSound = new Audio("https://www.myinstants.com/media/sounds/coin.mp3");
+    const scoreUpSound = new Audio("https://www.myinstants.com/media/sounds/level-up-2.mp3");
+    const gameOverSound = new Audio("https://www.myinstants.com/media/sounds/game-over.mp3");
+
+    const obstacleImages = [
+      "https://cdn-icons-png.flaticon.com/128/15316/15316087.png",
+      "https://cdn-icons-png.flaticon.com/128/15600/15600843.png",
+      "https://cdn-icons-png.flaticon.com/128/3640/3640494.png",
+      "https://cdn-icons-png.flaticon.com/128/11090/11090885.png",
+      "https://cdn-icons-png.flaticon.com/128/11161/11161537.png"
+    ];
+
+    const starImage = "https://cdn-icons-png.flaticon.com/128/1985/1985879.png";
+
+    const messages = [
+      "Keep practicing!", "Not bad!", "You're getting better!", "Great effort!", "Impressive!",
+      "Amazing!", "You're a pro!", "Fantastic skills!", "Unstoppable!", "Master of the game!",
+      "Legendary!", "Incredible reflexes!", "Elite player!", "Champion!", "Godlike!",
+      "Unbelievable!", "Superhuman!", "Unreal skills!", "Beyond limits!", "The ultimate player!"
+    ];
+
+    const titles = [
+      "Novice", "Beginner", "Rookie", "Skilled", "Expert",
+      "Elite", "Master", "Legend", "Grandmaster", "Hero",
+      "Superstar", "Champion", "Overlord", "Supreme", "Demi-God",
+      "God", "Ultra Instinct", "Transcendent", "Immortal", "Omnipotent"
+    ];
+
+    function showGameOverScreen(score) {
+      let index = Math.min(Math.floor(score / 100), messages.length - 1);
+      let title = titles[index];
+      let message = messages[index];
+      let crown = getCrown(score);
+      let stars = getStarMessage();
+
+      let overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.background = "rgba(0, 0, 0, 0.7)";
+      overlay.style.color = "white";
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.justifyContent = "center";
+      overlay.style.alignItems = "center";
+      overlay.style.fontSize = "20px";
+      overlay.style.zIndex = "1000";
+
+      let content = `
+      <div style="background: black; padding: 20px; border-radius: 10px; text-align: center;">
+          <h2>Game Over!</h2>
+          <p>Score: ${score}</p>
+          <p style="font-size: 18px;">Rank: <strong>${title}</strong></p>
+          <p>${message}</p>
+          <p style="font-size: 22px;">${crown}</p>
+          <p style="font-size: 24px; color: gold;">${stars}</p>
+          <button id="restartButton" style="padding: 10px; font-size: 16px; margin-top: 10px;">Replay</button>
+          <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">or press F5 to replay</p>
+      </div>
+  `;
+
+      overlay.innerHTML = content;
+      document.body.appendChild(overlay);
+
+      document.getElementById("restartButton").addEventListener("click", () => {
+        document.body.removeChild(overlay);
+        restartGame();
+      });
+    }
+
+    function restartGame() {
+      gameOver = false;
+      score = 0;
+      starCount = 0;
+      obstacles = [];
+      player.x = 180;
+      obstacleSpeed = initialObstacleSpeed;
+      spawnInterval = 800;
+      scoreUpPlayed = false;
+
+      clearInterval(spawnTimer);
+      spawnTimer = setInterval(spawnObstacle, spawnInterval);
+
+      requestAnimationFrame(gameLoop);
+
+      // **キーイベントを確実に再登録**
+      document.removeEventListener("keydown", handleKeydown); // 重複防止
+      document.addEventListener("keydown", handleKeydown);
+    }
+
+    function spawnObstacle() {
+      let isStar = Math.random() < 1 / 40;
+      let img = new Image();
+      img.src = isStar ? starImage : obstacleImages[Math.floor(Math.random() * obstacleImages.length)];
+      let speed = isStar ? initialObstacleSpeed : obstacleSpeed;
+
+      obstacles.push({ x: Math.random() * 360, y: 0, width: 20, height: 20, img: img, isStar: isStar, speed: speed });
+    }
+
+    function update() {
+      if (gameOver) return;  // 既にゲームオーバーなら処理をスキップ
+
+      obstacles.forEach(o => o.y += o.speed);
+      obstacles = obstacles.filter(o => o.y < canvas.height);
+
+      for (let o of obstacles) {
+        if (player.x < o.x + o.width &&
+          player.x + player.width > o.x &&
+          player.y < o.y + o.height &&
+          player.y + player.height > o.y) {
+
+          if (o.isStar) {
+            // ⭐スターを取った場合
+            score += 100;
+            starCount++;
+            starSound.play();
+            obstacles = obstacles.filter(obj => obj !== o);
+          } else {
+            // 💀障害物に当たった場合（ゲームオーバー）
+            gameOver = true;
+            gameOverSound.play();
+
+            // 🚀 ゲームオーバー画面を確実に表示
+            setTimeout(() => showGameOverScreen(score), 500);
+
+            // ⛔ ゲームループを停止
+            cancelAnimationFrame(gameLoopId);
+
+            // **return を削除** → `setTimeout()` が確実に動作するようにする
+          }
+        }
+      }
+
+      score += 1;
+      scoreDisplay.innerHTML = `Score: ${score}`;
+
+      if (score % 100 === 0) {
+        obstacleSpeed += 0.5;
+        spawnInterval = Math.max(100, spawnInterval - 50);
+
+        clearInterval(spawnTimer);
+        spawnTimer = setInterval(spawnObstacle, spawnInterval);
+      }
+
+      if (score >= 1000 && !scoreUpPlayed) {
+        scoreUpSound.play();
+        scoreUpPlayed = true;
+      }
+    }
+
+    // 🎮 ゲームループIDを管理
+    let gameLoopId;
+
+    function gameLoop() {
+      if (!gameOver) {
+        update();
+        draw();
+        gameLoopId = requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // 🏅 メダルとレベルを取得
+    function getCrown(score) {
+      let crownCount = Math.floor(score / 100);
+      let level = crownCount + 1;
+      let color = "🥉 BRONZE";
+      if (score >= 1200 && score <= 1599) color = "🥈 SILVER!";
+      if (score >= 1600) color = "🥇 GOLD!!";
+
+      return `${color}<br>${"👑".repeat(crownCount)} Lv.${level - 1}`;
+    }
+
+    // ⭐ スターのメッセージ
+    function getStarMessage() {
+      return starCount > 0 ? `<div style="font-size: 24px; color: gold;">⭐ x ${starCount}</div>` : "";
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      if (!player.facingRight) {
+        ctx.scale(-1, 1);
+        ctx.drawImage(player.img, -player.x - player.width, player.y, player.width, player.height);
+      } else {
+        ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
+      }
+      ctx.restore();
+
+      obstacles.forEach(o => {
+        ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
+      });
+    }
+
+    function handleKeydown(e) {
+      if (gameOver) return;
+
+      if (e.key === "ArrowLeft" && player.x > 0) {
+        player.x -= 20;
+        player.facingRight = false;
+        moveSound.play();
+      }
+      if (e.key === "ArrowRight" && player.x < 360) {
+        player.x += 20;
+        player.facingRight = true;
+        moveSound.play();
+      }
+    }
+
+    // **キーイベントの登録を1回のみに統一**
+    document.addEventListener("keydown", handleKeydown);
+
+    function gameLoop() {
+      if (!gameOver) {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    spawnTimer = setInterval(spawnObstacle, spawnInterval);
+    gameLoop();
+
+  </script>
+</body>
+</html>
