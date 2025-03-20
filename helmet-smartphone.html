@@ -75,7 +75,7 @@
     scoreDisplay.style.color = "white"; // Text color
     scoreDisplay.style.padding = "5px 10px"; // Add padding for better appearance
     scoreDisplay.style.borderRadius = "5px"; // Rounded corners
-    scoreDisplay.style.width = "100px"; // Set a fixed width
+    scoreDisplay.style.width = "110px"; // Set a fixed width
     scoreDisplay.style.textAlign = "left"; // Center the text inside the box
     scoreDisplay.innerHTML = `Score: 0`; // Initialize with a default score
     document.body.insertBefore(scoreDisplay, canvas);
@@ -116,6 +116,7 @@
     //    const gameOverSound = new Audio("https://www.myinstants.com/media/sounds/game-over.mp3");
     const gameOverSound = new Audio("https://www.myinstants.com//media/sounds/gukii-xiao-guo-yin.mp3");
     //    const replaySound = new Audio("https://www.myinstants.com/media/sounds/nintendo-game-boy-startup.mp3");
+    const waterSound = new Audio("https://www.myinstants.com/media/sounds/water-droplet-drip.mp3");
 
     const applauseSounds = [
       // new Audio("https://www.myinstants.com/media/sounds/musuka-ren-gomi.mp3"), // Musuka gomi
@@ -144,6 +145,8 @@
       "https://cdn-icons-png.flaticon.com/128/2299/2299282.png",
       "https://cdn-icons-png.flaticon.com/128/13087/13087668.png"
     ];
+
+    const waterImage = "https://cdn-icons-png.flaticon.com/128/471/471568.png";
 
     const starImage = "https://cdn-icons-png.flaticon.com/128/1985/1985879.png";
 
@@ -273,11 +276,13 @@
 
     function spawnObstacle() {
       let isStar = Math.random() < 1 / 40;
+      let isWater = Math.random() < 1 / 50;
       let img = new Image();
-      img.src = isStar ? starImage : obstacleImages[Math.floor(Math.random() * obstacleImages.length)];
-      let speed = isStar ? initialObstacleSpeed : obstacleSpeed;
+      img.src = isStar ? starImage : (isWater ? waterImage : obstacleImages[Math.floor(Math.random() * obstacleImages.length)]);
 
-      obstacles.push({ x: Math.random() * 360, y: 0, width: 20, height: 20, img: img, isStar: isStar, speed: speed });
+      let speed = (isStar || isWater) ? initialObstacleSpeed : obstacleSpeed;
+
+      obstacles.push({ x: Math.random() * (canvas.width - 30), y: 0, width: 30, height: 30, img: img, isWater: isWater, isStar: isStar, speed: speed });
     }
 
     function update() {
@@ -292,6 +297,7 @@
           player.y < o.y + o.height &&
           player.y + player.height > o.y) {
 
+
           if (o.isStar) {
             // ⭐スターを取った場合
             score += 100 * (starCount + 1);
@@ -300,6 +306,16 @@
             starSound.currentTime = 0;
             starSound.play();
             obstacles = obstacles.filter(obj => obj !== o);
+          } else if (o.isWater) {
+            // 💧水に当たった場合（画面上にある全ての障害物が消える）
+            waterSound.play();
+            obstacles = [];
+            obstacleSpeed -= 1.5;
+            spawnInterval = spawnInterval + 100;
+
+            clearInterval(spawnTimer);
+            spawnTimer = setInterval(spawnObstacle, spawnInterval);
+
           } else {
             // 💀障害物に当たった場合（ゲームオーバー）
             gameOver = true;
