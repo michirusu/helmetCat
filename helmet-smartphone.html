@@ -4,33 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helmet Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gidole&display=swap" rel="stylesheet">
+
+
   <style>
     body {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      //height: 100vh;
+      margin-top: 15px;
       overflow: hidden;
       background-color: #f8f8f8;
+      font-family: 'Gidole', sans-serif;
+      /* Set Gidole as the default font */
     }
 
     canvas {
       border: 2px solid black;
+      margin-top: 0;
+      /* Ensure the canvas starts at the top */
     }
 
-    /* Default PC styles */
+    /* Default iPhone styles */
     canvas {
       width: 375px;
-      height: 650px;
+      height: 677px;
     }
 
     @media screen and (max-width: 959px) {
 
       /* Tablet styles */
       canvas {
-        width: 80vw;
+        width: 90vw;
         height: 90vh;
       }
     }
@@ -39,8 +46,8 @@
 
       /* Smartphone styles */
       canvas {
-        width: 90vw;
-        height: 95vh;
+        width: 80vw;
+        height: 80vh;
       }
     }
   </style>
@@ -51,18 +58,41 @@
     const ctx = canvas.getContext("2d");
     document.body.appendChild(canvas);
     canvas.width = 375;
-    canvas.height = 667;
+    canvas.height = 630;
 
-    document.body.style.textAlign = "center";
+    // Define the path to the helmetCat.png image
+    const helmetCatImage = "./img/helmetCat.png";
+
+    document.body.style.textAlign = "right";
     const scoreDisplay = document.createElement("div");
+    scoreDisplay.style.position = "fixed"; // Fix the position at the top
+    scoreDisplay.style.top = "10px"; // Add some space from the top
+    scoreDisplay.style.left = "50%"; // Center horizontally
+    scoreDisplay.style.transform = "translateX(-50%)"; // Adjust for centering
     scoreDisplay.style.fontSize = "20px";
-    scoreDisplay.style.marginBottom = "10px";
+    scoreDisplay.style.fontFamily = "'Gidole', sans-serif"; // Ensure consistent font
+    scoreDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.3)"; // Optional: Add a background for better visibility
+    scoreDisplay.style.color = "white"; // Text color
+    scoreDisplay.style.padding = "5px 10px"; // Add padding for better appearance
+    scoreDisplay.style.borderRadius = "5px"; // Rounded corners
+    scoreDisplay.style.width = "100px"; // Set a fixed width
+    scoreDisplay.style.textAlign = "left"; // Center the text inside the box
+    scoreDisplay.innerHTML = `Score: 0`; // Initialize with a default score
     document.body.insertBefore(scoreDisplay, canvas);
 
-    let player = { x: 180, y: 625, width: 40, height: 40, img: new Image(), facingRight: true };
+    let player = { x: 180, y: 590, width: 40, height: 40, img: new Image(), facingRight: true };
+    player.img.onload = () => {
+      console.log("Player image loaded successfully.");
+    };
+    player.img.src = helmetCatImage; // Use the helmetCat.png image
     const rightCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
     const leftCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
     player.img.src = rightCatImage;
+
+    // Request fullscreen mode
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.log(`Error attempting to enable fullscreen mode: ${err.message}`);
+    });
 
     let obstacles = [];
     let gameOver = false;
@@ -74,6 +104,9 @@
     let spawnTimer;
     let starCount = 0;
 
+    const replaySound = new Audio("https://www.myinstants.com/media/sounds/meow-1.mp3");
+    //const replaySound = new Audio("https://www.myinstants.com/media/sounds/after-effects-chime_5aMT31N.mp3");
+    replaySound.volume = 0.5;
     const moveSound = new Audio("https://www.myinstants.com/media/sounds/jump-sound.mp3");
     moveSound.volume = 0.5;
     //    const starSound = new Audio("https://www.myinstants.com/media/sounds/coin.mp3");
@@ -83,9 +116,6 @@
     //    const gameOverSound = new Audio("https://www.myinstants.com/media/sounds/game-over.mp3");
     const gameOverSound = new Audio("https://www.myinstants.com//media/sounds/gukii-xiao-guo-yin.mp3");
     //    const replaySound = new Audio("https://www.myinstants.com/media/sounds/nintendo-game-boy-startup.mp3");
-    const replaySound = new Audio("https://www.myinstants.com/media/sounds/meow-1.mp3");
-    //const replaySound = new Audio("https://www.myinstants.com/media/sounds/after-effects-chime_5aMT31N.mp3");
-    replaySound.volume = 0.5;
 
     const applauseSounds = [
       // new Audio("https://www.myinstants.com/media/sounds/musuka-ren-gomi.mp3"), // Musuka gomi
@@ -107,7 +137,12 @@
       "https://cdn-icons-png.flaticon.com/128/15600/15600843.png",
       "https://cdn-icons-png.flaticon.com/128/3640/3640494.png",
       "https://cdn-icons-png.flaticon.com/128/11090/11090885.png",
-      "https://cdn-icons-png.flaticon.com/128/11161/11161537.png"
+      "https://cdn-icons-png.flaticon.com/128/11161/11161537.png",
+      "https://cdn-icons-png.flaticon.com/128/17334/17334101.png",
+      "https://cdn-icons-png.flaticon.com/128/17441/17441164.png",
+      "https://cdn-icons-png.flaticon.com/128/12027/12027060.png",
+      "https://cdn-icons-png.flaticon.com/128/2299/2299282.png",
+      "https://cdn-icons-png.flaticon.com/128/13087/13087668.png"
     ];
 
     const starImage = "https://cdn-icons-png.flaticon.com/128/1985/1985879.png";
@@ -137,12 +172,12 @@
 
     function playGameOverSound() {
       if (score < 500) {
-        applauseSounds[0].volume = 0.5;
+        applauseSounds[0].volume = 0.42;
         setTimeout(() => {
           applauseSounds[0].play();
         }, 700); // 0.7 second delay
       } else if (score < 1000) {
-        applauseSounds[1].volume = 0.5;
+        applauseSounds[1].volume = 0.35;
         setTimeout(() => {
           applauseSounds[1].play();
         }, 750); // 0.75 second delay
@@ -217,16 +252,23 @@
       spawnInterval = 800;
       scoreUpPlayed = false;
 
+      // Stop and reset gameOverSound
+      gameOverSound.pause();
+      gameOverSound.currentTime = 0;
+
+      // Reset and play replaySound
+      replaySound.pause();
+      replaySound.currentTime = 0;
+      replaySound.play();
+
       clearInterval(spawnTimer);
       spawnTimer = setInterval(spawnObstacle, spawnInterval);
 
       requestAnimationFrame(gameLoop);
 
-      // **キーイベントを確実に再登録**
-      document.removeEventListener("keydown", handleKeydown); // 重複防止
+      // Re-register key events to avoid duplication
+      document.removeEventListener("keydown", handleKeydown);
       document.addEventListener("keydown", handleKeydown);
-
-      replaySound.play();
     }
 
     function spawnObstacle() {
@@ -254,6 +296,8 @@
             // ⭐スターを取った場合
             score += 100 * (starCount + 1);
             starCount++;
+            starSound.pause();
+            starSound.currentTime = 0;
             starSound.play();
             obstacles = obstacles.filter(obj => obj !== o);
           } else {
@@ -296,9 +340,10 @@
 
     function gameLoop() {
       if (!gameOver) {
+        console.log("Game loop running...");
         update();
         draw();
-        gameLoopId = requestAnimationFrame(gameLoop);
+        requestAnimationFrame(gameLoop);
       }
     }
 
@@ -318,6 +363,7 @@
       return starCount > 0 ? `<div style="font-size: 24px; color: gold;">⭐ x ${starCount}</div>` : "";
     }
 
+    // Draw the player in the game loop
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -327,7 +373,7 @@
 
       ctx.save();
       if (!player.facingRight) {
-        ctx.scale(-1, 1);
+        ctx.scale(-1, 1); // Flip the image horizontally when facing left
         ctx.drawImage(player.img, -player.x - player.width, player.y, player.width, player.height);
       } else {
         ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
@@ -337,6 +383,8 @@
       obstacles.forEach(o => {
         ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
       });
+
+      console.log("Draw function executed.");
     }
 
     function handleKeydown(e) {
