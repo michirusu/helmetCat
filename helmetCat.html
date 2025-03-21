@@ -84,18 +84,18 @@
     adjustCanvasSize();
     window.addEventListener("resize", adjustCanvasSize);
 
-    // ハイスコア表示用の要素を作成
-    const highScoreDisplay = document.createElement("div");
-    highScoreDisplay.style.position = "absolute";
-    highScoreDisplay.style.top = "10px";
-    highScoreDisplay.style.right = "10px";
-    highScoreDisplay.style.color = "white";
-    highScoreDisplay.style.fontSize = "20px";
-    highScoreDisplay.style.fontFamily = "'Gidole', sans-serif";
-    document.body.appendChild(highScoreDisplay);
+    // // ハイスコア表示用の要素を作成
+    // const highScoreDisplay = document.createElement("div");
+    // highScoreDisplay.style.position = "absolute";
+    // highScoreDisplay.style.top = "10px";
+    // highScoreDisplay.style.right = "10px";
+    // highScoreDisplay.style.color = "white";
+    // highScoreDisplay.style.fontSize = "20px";
+    // highScoreDisplay.style.fontFamily = "'Gidole', sans-serif";
+    // document.body.appendChild(highScoreDisplay);
 
-    // 初期ハイスコアを表示
-    highScoreDisplay.innerHTML = `High Score: ${getHighScore()}`;
+    // // 初期ハイスコアを表示
+    // highScoreDisplay.innerHTML = `High Score: ${getHighScore()}`;
     // Define the path to the helmetCat.png image
     const helmetCatImage = "./img/helmetCat.png";
 
@@ -278,7 +278,7 @@
       if (score > highScore) {
         setHighScore(score);
         isHighScoreUpdated = true;
-        highScoreDisplay.innerHTML = `High Score: ${score}`; // ハイスコアを更新
+        //highScoreDisplay.innerHTML = `High Score: ${score}`; // ハイスコアを更新
       }
 
       let overlay = document.createElement("div");
