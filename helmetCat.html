@@ -59,10 +59,145 @@
         height: 80vh;
       }
     }
+
+    /* 音符アイコンのスタイル */
+    .music-icon {
+      position: fixed;
+      /* 固定位置に設定 */
+      top: 10px;
+      /* 画面の上から10px */
+      right: 10px;
+      /* 画面の右から10px */
+      font-size: 16px;
+      /* フォントサイズ */
+      cursor: pointer;
+      /* クリック可能に設定 */
+      color: gray;
+      /* アイコンの色 */
+      transition: transform 0.3s ease;
+      /* ホバー時のアニメーション */
+      z-index: 1000;
+      /* 他の要素より前面に表示 */
+    }
+
+    .music-icon:hover {
+      transform: scale(1.2);
+      /* ホバー時に拡大 */
+    }
   </style>
 </head>
 <body>
+  <!-- 音符アイコン -->
+  <div class="music-icon" id="musicIcon" onclick="changeMusic()">♪</div>
+
   <script>
+    // 音楽ファイルのリスト（最後の要素は「音楽オフ」）
+    const musicFiles = [
+      { title: "Look at Me", file: "./mp3/Look_at_Me.mp3" },
+      { title: "Bye Bye Baby", file: "./mp3/Bye_Bye_Baby.mp3" },
+      { title: "Skyline", file: "./mp3/Skyline.mp3" },
+      { title: "SUMMER TRIANGLE", file: "./mp3/SUMMER_TRIANGLE.mp3" },
+      { title: "Sweet Tooth", file: "./mp3/Sweet_Tooth.mp3" },
+      { title: "ナイコメなこちゃん", file: "./mp3/ナイコメなこちゃん.mp3" },
+      { title: "No Music", file: null } // 音楽オフ
+    ];
+
+    let currentMusicIndex = musicFiles.length - 1; // デフォルトは「音楽オフ」
+    let audio = null; // Audioオブジェクトを初期化
+    let isVolumeAdjusting = false; // 音量調整中かどうかを管理
+
+    // 音楽を切り替える関数
+    function changeMusic() {
+      // 現在の音楽を停止
+      if (audio) {
+        audio.pause();
+        audio = null;
+      }
+
+      // 次の音楽に切り替え
+      currentMusicIndex = (currentMusicIndex + 1) % musicFiles.length;
+      const nextMusic = musicFiles[currentMusicIndex];
+
+      // 音楽が「No Music」でない場合は再生
+      if (nextMusic.file) {
+        audio = new Audio(nextMusic.file);
+        audio.loop = true; // ループ再生を有効化
+        audio.volume = 0.5; // -6dB（50%の音量）
+        if ((currentMusicIndex === 1) || (currentMusicIndex === 4)) {
+          audio.volume = 0.3;
+        }
+        audio.play();
+      }
+
+      // 音符アイコンに番号を表示
+      const musicIconElement = document.getElementById("musicIcon");
+      if (currentMusicIndex === musicFiles.length - 1) {
+        musicIconElement.textContent = "♪"; // 音楽オフの場合は番号を非表示
+      } else {
+        musicIconElement.textContent = `♪${currentMusicIndex + 1}`;
+      }
+    }
+
+    // 初期状態では音楽オフ
+    function initializeMusic() {
+      const musicIconElement = document.getElementById("musicIcon");
+      musicIconElement.textContent = "♪"; // デフォルトは「No Music」
+    }
+
+    // ゲームオーバー時に音楽を停止する関数（音量を徐々に下げる）
+    function stopBackgroundMusic() {
+      if (audio) {
+        let volume = audio.volume;
+        const fadeOutInterval = setInterval(() => {
+          if (volume > 0) {
+            volume -= 0.05; // 徐々に音量を下げる
+            audio.volume = Math.max(volume, 0); // 最小値は0
+          } else {
+            clearInterval(fadeOutInterval);
+            audio.pause(); // 音楽を停止
+            audio = null; // Audioオブジェクトをリセット
+          }
+        }, 50); // 50msごとに音量を下げる
+      }
+    }
+
+    // 星や水の音が再生されるときに背景音楽を一時的に下げる
+    function playEffectSound(effectFile) {
+      if (!audio || isVolumeAdjusting) return; // 音楽が再生されていない場合や調整中は何もしない
+
+      // 背景音楽を-12dB（25%の音量）に下げる
+      const originalVolume = 0.5; // -6dB（50%の音量）
+      audio.volume = 0.25; // -12dB
+
+      // 効果音を再生
+      const effectAudio = new Audio(effectFile);
+      effectAudio.play();
+
+      // 効果音が終了したら音量を元に戻す
+      effectAudio.onended = () => {
+        isVolumeAdjusting = true;
+        let volume = audio.volume;
+        const fadeInInterval = setInterval(() => {
+          if (volume < originalVolume) {
+            volume += 0.05; // 徐々に音量を上げる
+            audio.volume = Math.min(volume, originalVolume); // 最大値は元の音量
+          } else {
+            clearInterval(fadeInInterval);
+            isVolumeAdjusting = false;
+          }
+        }, 50); // 50msごとに音量を上げる
+      };
+    }
+
+    // 初期状態では音楽オフ
+    function initializeMusic() {
+      const musicIconElement = document.getElementById("musicIcon");
+      musicIconElement.textContent = "♪"; // デフォルトは「No Music」
+    }
+
+    // ページ読み込み時に初期化
+    window.onload = initializeMusic;
+
     // CSSでズームを無効化
     document.documentElement.style.touchAction = "manipulation";
     document.documentElement.style.msTouchAction = "manipulation";
@@ -265,7 +400,17 @@
       }
     }
 
+    // ゲームオーバー時に音楽を停止する関数
+    function stopBackgroundMusic() {
+      if (audio) {
+        audio.pause(); // 音楽を停止
+        audio.currentTime = 0; // 再生位置をリセット
+        audio = null; // Audioオブジェクトをリセット
+      }
+    }
+
     function showGameOverScreen(score) {
+      stopBackgroundMusic(); // ゲームオーバー時に音楽を停止
       let index = Math.min(Math.floor(score / 100), messages.length - 1);
       let title = titles[index];
       let message = messages[index];
@@ -366,6 +511,18 @@
       replaySound.pause();
       replaySound.currentTime = 0;
       replaySound.play();
+
+      // 前回選択されていた音楽を再生
+      const selectedMusic = musicFiles[currentMusicIndex];
+      if (selectedMusic.file) {
+        audio = new Audio(selectedMusic.file);
+        audio.loop = true; // ループ再生を有効化
+        audio.volume = 0.5; // -6dB（50%の音量）
+        if ((currentMusicIndex === 1) || (currentMusicIndex === 4)) {
+          audio.volume = 0.3;
+        }
+        audio.play();
+      }
 
       clearInterval(spawnTimer);
       spawnTimer = setInterval(spawnObstacle, spawnInterval);
