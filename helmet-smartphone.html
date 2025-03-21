@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Helmet Game</title>
   <link href="https://fonts.googleapis.com/css2?family=Gidole&display=swap" rel="stylesheet">
 
@@ -96,15 +96,20 @@
     player.img.onload = () => {
       console.log("Player image loaded successfully.");
     };
+    player.img.onerror = (err) => {
+      console.error("Failed to load player image:", err);
+    };
     player.img.src = helmetCatImage; // Use the helmetCat.png image
     const rightCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
     const leftCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
     player.img.src = rightCatImage;
 
-    // Request fullscreen mode
-    document.documentElement.requestFullscreen().catch((err) => {
-      console.log(`Error attempting to enable fullscreen mode: ${err.message}`);
-    });
+    // requestFullscreenを削除または条件付きで実行
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.log(`Error attempting to enable fullscreen mode: ${err.message}`);
+      });
+    }
 
     let obstacles = [];
     let gameOver = false;
