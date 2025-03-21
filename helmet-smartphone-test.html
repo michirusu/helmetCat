@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Helmet Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gidole&display=swap" rel="stylesheet">
+
+
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      //height: 100vh;
+      margin-top: 15px;
+      overflow: hidden;
+      background-color: #f8f8f8;
+      font-family: 'Gidole', sans-serif;
+      /* Set Gidole as the default font */
+    }
+
+    canvas {
+      border: 2px solid black;
+      margin-top: 0;
+      /* Ensure the canvas starts at the top */
+    }
+
+    /* Default iPhone styles */
+    canvas {
+      width: 375px;
+      height: 677px;
+    }
+
+    @media screen and (max-width: 959px) {
+
+      /* Tablet styles */
+      canvas {
+        width: 90vw;
+        height: 90vh;
+      }
+    }
+
+    @media screen and (max-width: 480px) {
+
+      /* Smartphone styles */
+      canvas {
+        width: 80vw;
+        height: 80vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    document.body.appendChild(canvas);
+
+    // Adjust canvas size dynamically based on the device's screen size
+    const adjustCanvasSize = () => {
+      const deviceWidth = window.innerWidth;
+      const deviceHeight = window.innerHeight;
+
+      // Set canvas size to fit within the screen
+      canvas.width = Math.min(375, deviceWidth * 0.9); // 90% of the screen width or 375px
+      canvas.height = Math.min(630, deviceHeight * 0.9); // 90% of the screen height or 630px
+    };
+
+    adjustCanvasSize();
+    window.addEventListener("resize", adjustCanvasSize);
+
+    // Define the path to the helmetCat.png image
+    const helmetCatImage = "./img/helmetCat.png";
+
+    document.body.style.textAlign = "right";
+    const scoreDisplay = document.createElement("div");
+    scoreDisplay.style.position = "fixed"; // Fix the position at the top
+    scoreDisplay.style.top = "10px"; // Add some space from the top
+    scoreDisplay.style.left = "50%"; // Center horizontally
+    scoreDisplay.style.transform = "translateX(-50%)"; // Adjust for centering
+    scoreDisplay.style.fontSize = "20px";
+    scoreDisplay.style.fontFamily = "'Gidole', sans-serif"; // Ensure consistent font
+    scoreDisplay.style.backgroundColor = "rgba(0, 0, 0, 0.3)"; // Optional: Add a background for better visibility
+    scoreDisplay.style.color = "white"; // Text color
+    scoreDisplay.style.padding = "5px 10px"; // Add padding for better appearance
+    scoreDisplay.style.borderRadius = "5px"; // Rounded corners
+    scoreDisplay.style.width = "110px"; // Set a fixed width
+    scoreDisplay.style.textAlign = "left"; // Center the text inside the box
+    scoreDisplay.innerHTML = `Score: 0`; // Initialize with a default score
+    document.body.insertBefore(scoreDisplay, canvas);
+
+    // Update player and obstacle positions based on the new canvas size
+    let player = { x: canvas.width / 2 - 20, y: canvas.height - 40, width: 40, height: 40, img: new Image(), facingRight: true };
+    player.img.onload = () => {
+      console.log("Player image loaded successfully.");
+    };
+    player.img.onerror = (err) => {
+      console.error("Failed to load player image:", err);
+    };
+    player.img.src = helmetCatImage; // Use the helmetCat.png image
+    const rightCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
+    const leftCatImage = "https://cdn-icons-png.flaticon.com/128/1067/1067860.png";
+    player.img.src = rightCatImage;
+
+    // requestFullscreenを削除または条件付きで実行
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.log(`Error attempting to enable fullscreen mode: ${err.message}`);
+      });
+    }
+
+    let obstacles = [];
+    let gameOver = false;
+    let score = 0;
+    let obstacleSpeed = 3;
+    let spawnInterval = 800;
+    let scoreUpPlayed = false;
+    let initialObstacleSpeed = obstacleSpeed;
+    let spawnTimer;
+    let starCount = 0;
+
+    const replaySound = new Audio("https://www.myinstants.com/media/sounds/meow-1.mp3");
+    //const replaySound = new Audio("https://www.myinstants.com/media/sounds/after-effects-chime_5aMT31N.mp3");
+    replaySound.volume = 0.5;
+    const moveSound = new Audio("https://www.myinstants.com/media/sounds/jump-sound.mp3");
+    moveSound.volume = 0.5;
+    //    const starSound = new Audio("https://www.myinstants.com/media/sounds/coin.mp3");
+    const starSound = new Audio("https://www.myinstants.com/media/sounds/chimes-glassy.mp3");
+    starSound.volume = 0.3;
+    const scoreUpSound = new Audio("https://www.myinstants.com/media/sounds/level-up-2.mp3");
+    //    const gameOverSound = new Audio("https://www.myinstants.com/media/sounds/game-over.mp3");
+    const gameOverSound = new Audio("https://www.myinstants.com//media/sounds/gukii-xiao-guo-yin.mp3");
+    //    const replaySound = new Audio("https://www.myinstants.com/media/sounds/nintendo-game-boy-startup.mp3");
+    const waterSound = new Audio("https://www.myinstants.com/media/sounds/water-droplet-drip.mp3");
+
+    const applauseSounds = [
+      // new Audio("https://www.myinstants.com/media/sounds/musuka-ren-gomi.mp3"), // Musuka gomi
+      // new Audio("https://www.myinstants.com/media/sounds/applause10.mp3"), // Very small applause
+      // new Audio("https://www.myinstants.com/media/sounds/applause-4.mp3"),             // Small applause
+      // new Audio("https://www.myinstants.com/media/sounds/clapping.mp3"),             // Medium applause
+      // new Audio("https://www.myinstants.com/media/sounds/99634_tomlija_small-crowd-cheering-and-clapping.mp3"), // Large applause
+      // new Audio("https://www.myinstants.com/media/sounds/crowd-applause-cheer-small-group_tUQjCQt.mp3")    // Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/musuka-ren-gomi.mp3"), // score<500
+      new Audio("https://www.myinstants.com//media/sounds/game-over.mp3"), // score<1000
+      new Audio("https://www.myinstants.com/media/sounds/omae-wa-mou-shindeiru.mp3"), // score<1500
+      new Audio("https://www.myinstants.com/media/sounds/yatta-desu-ne.mp3"),             // score<1800
+      new Audio("https://www.myinstants.com/media/sounds/wot-mako-oh-sugoi-na.mp3"), // score<2000
+      new Audio("https://www.myinstants.com/media/sounds/crowd-applause-cheer-small-group_tUQjCQt.mp3")    // score>=2000 Huge applause
+    ];
+
+    const obstacleImages = [
+      "https://cdn-icons-png.flaticon.com/128/15316/15316087.png",
+      "https://cdn-icons-png.flaticon.com/128/15600/15600843.png",
+      "https://cdn-icons-png.flaticon.com/128/3640/3640494.png",
+      "https://cdn-icons-png.flaticon.com/128/11090/11090885.png",
+      "https://cdn-icons-png.flaticon.com/128/11161/11161537.png",
+      "https://cdn-icons-png.flaticon.com/128/17334/17334101.png",
+      "https://cdn-icons-png.flaticon.com/128/17441/17441164.png",
+      "https://cdn-icons-png.flaticon.com/128/12027/12027060.png",
+      "https://cdn-icons-png.flaticon.com/128/2299/2299282.png",
+      "https://cdn-icons-png.flaticon.com/128/13087/13087668.png"
+    ];
+
+    const waterImage = "https://cdn-icons-png.flaticon.com/128/471/471568.png";
+
+    const starImage = "https://cdn-icons-png.flaticon.com/128/1985/1985879.png";
+
+    const messages = [
+      "Keep practicing!", "Not bad!", "You're getting better!", "Great effort!", "Impressive!",
+      "Amazing!", "You're a pro!", "Fantastic skills!", "Unstoppable!", "Master of the game!",
+      "Legendary!", "Incredible reflexes!", "Elite player!", "Champion!", "Godlike!",
+      "Unbelievable!", "Superhuman!", "Unreal skills!", "Beyond limits!", "The ultimate player!",
+      "Next-level!", "You’re a phenom!", "Mastermind!", "Epic performance!", "Breaking records!",
+      "Limitless!", "Untouchable!", "Peak perfection!", "You redefine skill!", "A true prodigy!",
+      "Cosmic force!", "Universal master!", "Dominating reality!", "Transcending existence!",
+      "The one above all!", "Beyond comprehension!", "Eternal greatness!", "Absolute ruler!",
+      "Omniscient genius!", "Game-breaking legend!"
+    ];
+
+    const titles = [
+      "Novice", "Beginner", "Rookie", "Skilled", "Expert",
+      "Elite", "Master", "Legend", "Grandmaster", "Hero",
+      "Superstar", "Champion", "Overlord", "Supreme", "Demi-God",
+      "God", "Ultra Instinct", "Transcendent", "Immortal", "Omnipotent",
+      "Ethereal", "Celestial", "Infinity", "Time Bender", "Space Conqueror",
+      "Cosmic Lord", "Divine Ascendant", "Reality Shifter", "Ultimate Entity", "Dimension Walker",
+      "Galactic Emperor", "Universal Overlord", "Absolute Being", "Supreme Architect", "Omniversal King",
+      "The Chosen One", "Infinite Sage", "Eternal Monarch", "Alpha & Omega", "Beyond Reality"
+    ];
+
+    function playGameOverSound() {
+      if (score < 500) {
+        applauseSounds[0].volume = 0.42;
+        setTimeout(() => {
+          applauseSounds[0].play();
+        }, 700); // 0.7 second delay
+      } else if (score < 1000) {
+        applauseSounds[1].volume = 0.35;
+        setTimeout(() => {
+          applauseSounds[1].play();
+        }, 750); // 0.75 second delay
+      } else if (score < 1500) {
+        applauseSounds[2].play();
+      } else if (score < 1800) {
+        setTimeout(() => {
+          applauseSounds[3].play();
+        }, 750); // 0.75 second delay
+      } else if (score < 2000) {
+        setTimeout(() => {
+          applauseSounds[4].play();
+        }, 850); // 0.85 second delay
+      } else {
+        setTimeout(() => {
+          applauseSounds[5].play();
+        }, 500); // 0.5 second delay
+      }
+    }
+
+    function showGameOverScreen(score) {
+      let index = Math.min(Math.floor(score / 100), messages.length - 1);
+      let title = titles[index];
+      let message = messages[index];
+      let crown = getCrown(score);
+      let stars = getStarMessage();
+
+      let overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = "0";
+      overlay.style.left = "0";
+      overlay.style.width = "100%";
+      overlay.style.height = "100%";
+      overlay.style.background = "rgba(0, 0, 0, 0.7)";
+      overlay.style.color = "white";
+      overlay.style.display = "flex";
+      overlay.style.flexDirection = "column";
+      overlay.style.justifyContent = "center";
+      overlay.style.alignItems = "center";
+      overlay.style.fontSize = "20px";
+      overlay.style.zIndex = "1000";
+
+      let content = `
+      <div style="background: black; padding: 20px; border-radius: 10px; text-align: center;">
+          <h2>Game Over!</h2>
+          <p>Score: ${score}</p>
+          <p style="font-size: 18px;">Rank: <strong>${title}</strong></p>
+          <p>${message}</p>
+          <p style="font-size: 22px;">${crown}</p>
+          <p style="font-size: 24px; color: gold;">${stars}</p>
+          <button id="restartButton" style="padding: 10px; font-size: 16px; margin-top: 10px;">Replay</button>
+          <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">or press F5 to replay</p>
+      </div>
+  `;
+
+      overlay.innerHTML = content;
+      document.body.appendChild(overlay);
+
+      document.getElementById("restartButton").addEventListener("click", () => {
+        document.body.removeChild(overlay);
+        restartGame();
+      });
+    }
+
+    function restartGame() {
+      gameOver = false;
+      score = 0;
+      starCount = 0;
+      obstacles = [];
+      player.x = 180;
+      obstacleSpeed = initialObstacleSpeed;
+      spawnInterval = 800;
+      scoreUpPlayed = false;
+
+      // Stop and reset gameOverSound
+      gameOverSound.pause();
+      gameOverSound.currentTime = 0;
+
+      // Reset and play replaySound
+      replaySound.pause();
+      replaySound.currentTime = 0;
+      replaySound.play();
+
+      clearInterval(spawnTimer);
+      spawnTimer = setInterval(spawnObstacle, spawnInterval);
+
+      requestAnimationFrame(gameLoop);
+
+      // Re-register key events to avoid duplication
+      document.removeEventListener("keydown", handleKeydown);
+      document.addEventListener("keydown", handleKeydown);
+    }
+
+    function spawnObstacle() {
+      let isStar = Math.random() < 1 / 40;
+      let isWater = Math.random() < 1 / 50;
+      let img = new Image();
+      img.src = isStar ? starImage : (isWater ? waterImage : obstacleImages[Math.floor(Math.random() * obstacleImages.length)]);
+
+      let speed = (isStar || isWater) ? initialObstacleSpeed : obstacleSpeed;
+
+      obstacles.push({ x: Math.random() * (canvas.width - 30), y: 0, width: 30, height: 30, img: img, isWater: isWater, isStar: isStar, speed: speed });
+    }
+
+    function update() {
+      if (gameOver) return;  // 既にゲームオーバーなら処理をスキップ
+
+      obstacles.forEach(o => o.y += o.speed);
+      obstacles = obstacles.filter(o => o.y < canvas.height);
+
+      for (let o of obstacles) {
+        if (player.x < o.x + o.width &&
+          player.x + player.width > o.x &&
+          player.y < o.y + o.height &&
+          player.y + player.height > o.y) {
+
+
+          if (o.isStar) {
+            // ⭐スターを取った場合
+            score += 100 * (starCount + 1);
+            starCount++;
+            starSound.pause();
+            starSound.currentTime = 0;
+            starSound.play();
+            obstacles = obstacles.filter(obj => obj !== o);
+          } else if (o.isWater) {
+            // 💧水に当たった場合（画面上にある全ての障害物が消える）
+            waterSound.play();
+            obstacles = [];
+            obstacleSpeed -= 1.5;
+            spawnInterval = spawnInterval + 100;
+
+            clearInterval(spawnTimer);
+            spawnTimer = setInterval(spawnObstacle, spawnInterval);
+
+          } else {
+            // 💀障害物に当たった場合（ゲームオーバー）
+            gameOver = true;
+            gameOverSound.volume = 0.5;
+            gameOverSound.play();
+            playGameOverSound();
+
+            // 🚀 ゲームオーバー画面を確実に表示
+            setTimeout(() => showGameOverScreen(score), 500);
+
+            // ⛔ ゲームループを停止
+            cancelAnimationFrame(gameLoopId);
+
+            // **return を削除** → `setTimeout()` が確実に動作するようにする
+          }
+        }
+      }
+
+      score += 1;
+      scoreDisplay.innerHTML = `Score: ${score}`;
+
+      if (score % 100 === 0) {
+        obstacleSpeed += 0.5;
+        spawnInterval = Math.max(100, spawnInterval - 50);
+
+        clearInterval(spawnTimer);
+        spawnTimer = setInterval(spawnObstacle, spawnInterval);
+      }
+
+      if (score >= 1000 && !scoreUpPlayed) {
+        scoreUpSound.play();
+        scoreUpPlayed = true;
+      }
+    }
+
+    // 🎮 ゲームループIDを管理
+    let gameLoopId;
+
+    function gameLoop() {
+      if (!gameOver) {
+        console.log("Game loop running...");
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // 🏅 メダルとレベルを取得
+    function getCrown(score) {
+      let crownCount = Math.floor(score / 100);
+      let level = crownCount + 1;
+      let color = "🥉 BRONZE";
+      if (score >= 1500 && score <= 1999) color = "🥈 SILVER!";
+      if (score >= 2000) color = "🥇 GOLD!!";
+
+      return `${color}<br>${"👑".repeat(crownCount)} Lv.${level - 1}`;
+    }
+
+    // ⭐ スターのメッセージ
+    function getStarMessage() {
+      return starCount > 0 ? `<div style="font-size: 24px; color: gold;">⭐ x ${starCount}</div>` : "";
+    }
+
+    // Draw the player in the game loop
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      if (!player.facingRight) {
+        ctx.scale(-1, 1); // Flip the image horizontally when facing left
+        ctx.drawImage(player.img, -player.x - player.width, player.y, player.width, player.height);
+      } else {
+        ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
+      }
+      ctx.restore();
+
+      obstacles.forEach(o => {
+        ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
+      });
+
+      console.log("Draw function executed.");
+    }
+
+    function handleKeydown(e) {
+      if (gameOver) return;
+
+      if (e.key === "ArrowLeft" && player.x > 0) {
+        player.x -= 20;
+        player.facingRight = false;
+        moveSound.play();
+      }
+      if (e.key === "ArrowRight" && player.x < canvas.width - player.width) { // 修正: 右端の制限をcanvas.width - player.widthに変更
+        player.x += 20;
+        player.facingRight = true;
+        moveSound.play();
+      }
+    }
+
+    // **キーイベントの登録を1回のみに統一**
+    document.addEventListener("keydown", handleKeydown);
+
+    function gameLoop() {
+      if (!gameOver) {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function handleTouch(event) {
+      if (gameOver) return;
+      const touchX = event.touches[0].clientX;
+      const canvasRect = canvas.getBoundingClientRect(); // Get canvas position on the screen
+      const relativeTouchX = touchX - canvasRect.left; // Convert touch position to canvas coordinates
+
+      if (relativeTouchX < player.x + player.width / 2 && player.x > 0) {
+        player.x -= 30;
+        player.facingRight = false;
+        moveSound.play();
+      } else if (relativeTouchX > player.x + player.width / 2 && player.x < canvas.width - player.width) {
+        player.x += 30;
+        player.facingRight = true;
+        moveSound.play();
+      }
+    }
+
+    document.addEventListener("touchstart", handleTouch);
+
+    // Ensure the game loop and drawing logic respect the new canvas size
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      if (!player.facingRight) {
+        ctx.scale(-1, 1); // Flip the image horizontally when facing left
+        ctx.drawImage(player.img, -player.x - player.width, player.y, player.width, player.height);
+      } else {
+        ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
+      }
+      ctx.restore();
+
+      obstacles.forEach(o => {
+        ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
+      });
+    }
+
+    spawnTimer = setInterval(spawnObstacle, spawnInterval);
+    gameLoop();
+
+  </script>
+</body>
+</html>
