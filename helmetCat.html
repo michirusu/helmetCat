@@ -145,6 +145,7 @@
     let initialObstacleSpeed = obstacleSpeed;
     let spawnTimer;
     let starCount = 0;
+    let isHighScoreUpdated = false;
 
     const replaySound = new Audio("https://www.myinstants.com/media/sounds/meow-1.mp3");
     //const replaySound = new Audio("https://www.myinstants.com/media/sounds/after-effects-chime_5aMT31N.mp3");
@@ -273,8 +274,10 @@
 
       // ハイスコアを更新
       const highScore = getHighScore();
+      let isHighScoreUpdated = false;
       if (score > highScore) {
         setHighScore(score);
+        isHighScoreUpdated = true;
         highScoreDisplay.innerHTML = `High Score: ${score}`; // ハイスコアを更新
       }
 
@@ -293,6 +296,11 @@
       overlay.style.fontSize = "20px";
       overlay.style.zIndex = "1000";
 
+      // ハイスコア更新メッセージを追加
+      const highScoreMessage = isHighScoreUpdated
+        ? `<p style="color: #FFD700; font-size: 22px; margin-top: 10px;">Highest Score EVER!!</p>`
+        : "";
+
       let content = `
       <div style="background: black; padding: 20px; border-radius: 10px; text-align: center;">
           <h2>Game Over!</h2>
@@ -302,6 +310,7 @@
           <p style="font-size: 22px;">${crown}</p>
           <p style="font-size: 24px; color: gold;">${stars}</p>
           <p style="font-size: 18px;">High Score: <strong>${Math.max(score, highScore)}</strong></p>
+          ${highScoreMessage} <!-- ハイスコア更新メッセージを挿入 -->
           <button id="restartButton" style="padding: 10px; font-size: 16px; margin-top: 10px;">Replay</button>
           <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">or press F5 to replay</p>
           <p style="font-family: 'Nico Moji', sans-serif; font-size: 24px; color: white; margin-top: 40px;">よけねこ</p>
@@ -318,8 +327,9 @@
     }
 
     // クッキーにハイスコアを保存
-    function setHighScore(score) {
-      document.cookie = `highscore=${score}; path=/; max-age=31536000`; // 1年間有効
+    function setHighScore(score, name) {
+      document.cookie = `yokeneko-highscore=${score}; path=/; max-age=31536000`; // ハイスコアを保存（1年間有効）
+      // document.cookie = `highscoreName=${encodeURIComponent(name)}; path=/; max-age=31536000`; // 名前も保存（1年間有効）
     }
 
     // クッキーからハイスコアを取得
@@ -327,8 +337,8 @@
       const cookies = document.cookie.split("; ");
       for (let cookie of cookies) {
         const [key, value] = cookie.split("=");
-        if (key === "highscore") {
-          return parseInt(value, 10) || 0;
+        if (key === "yokeneko-highscore") {
+          return parseInt(value, 10) || 0; // ハイスコアを整数として返す
         }
       }
       return 0; // ハイスコアがない場合は0を返す
