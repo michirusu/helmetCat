@@ -57,8 +57,19 @@
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     document.body.appendChild(canvas);
-    canvas.width = 375;
-    canvas.height = 630;
+
+    // Adjust canvas size dynamically based on the device's screen size
+    const adjustCanvasSize = () => {
+      const deviceWidth = window.innerWidth;
+      const deviceHeight = window.innerHeight;
+
+      // Set canvas size to fit within the screen
+      canvas.width = Math.min(375, deviceWidth * 0.9); // 90% of the screen width or 375px
+      canvas.height = Math.min(630, deviceHeight * 0.9); // 90% of the screen height or 630px
+    };
+
+    adjustCanvasSize();
+    window.addEventListener("resize", adjustCanvasSize);
 
     // Define the path to the helmetCat.png image
     const helmetCatImage = "./img/helmetCat.png";
@@ -80,7 +91,8 @@
     scoreDisplay.innerHTML = `Score: 0`; // Initialize with a default score
     document.body.insertBefore(scoreDisplay, canvas);
 
-    let player = { x: 180, y: 590, width: 40, height: 40, img: new Image(), facingRight: true };
+    // Update player and obstacle positions based on the new canvas size
+    let player = { x: canvas.width / 2 - 20, y: canvas.height - 40, width: 40, height: 40, img: new Image(), facingRight: true };
     player.img.onload = () => {
       console.log("Player image loaded successfully.");
     };
@@ -411,7 +423,7 @@
         player.facingRight = false;
         moveSound.play();
       }
-      if (e.key === "ArrowRight" && player.x < 340) {
+      if (e.key === "ArrowRight" && player.x < canvas.width - player.width) { // 修正: 右端の制限をcanvas.width - player.widthに変更
         player.x += 20;
         player.facingRight = true;
         moveSound.play();
@@ -432,19 +444,44 @@
     function handleTouch(event) {
       if (gameOver) return;
       const touchX = event.touches[0].clientX;
-      if (touchX < player.x + player.width / 2 && player.x > 0) {
+      const canvasRect = canvas.getBoundingClientRect(); // Get canvas position on the screen
+      const relativeTouchX = touchX - canvasRect.left; // Convert touch position to canvas coordinates
+
+      if (relativeTouchX < player.x + player.width / 2 && player.x > 0) {
         player.x -= 30;
         player.facingRight = false;
         moveSound.play();
-      } else if (touchX > player.x + player.width / 2 && player.x < canvas.width - player.width) {
+      } else if (relativeTouchX > player.x + player.width / 2 && player.x < canvas.width - player.width) {
         player.x += 30;
         player.facingRight = true;
         moveSound.play();
       }
-      player.img.src = rightCatImage; // Always set to right-facing image
     }
 
     document.addEventListener("touchstart", handleTouch);
+
+    // Ensure the game loop and drawing logic respect the new canvas size
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      if (!player.facingRight) {
+        ctx.scale(-1, 1); // Flip the image horizontally when facing left
+        ctx.drawImage(player.img, -player.x - player.width, player.y, player.width, player.height);
+      } else {
+        ctx.drawImage(player.img, player.x, player.y, player.width, player.height);
+      }
+      ctx.restore();
+
+      obstacles.forEach(o => {
+        ctx.drawImage(o.img, o.x, o.y, o.width, o.height);
+      });
+    }
+
     spawnTimer = setInterval(spawnObstacle, spawnInterval);
     gameLoop();
 
