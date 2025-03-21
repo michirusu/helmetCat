@@ -6,8 +6,17 @@
   <title>Helmet Game</title>
   <link href="https://fonts.googleapis.com/css2?family=Gidole&display=swap" rel="stylesheet">
 
-
   <style>
+    html,
+    body {
+      touch-action: manipulation;
+      /* タッチ操作を制限 */
+      -ms-touch-action: manipulation;
+      /* IE用 */
+      overflow: hidden;
+      /* スクロールを無効化 */
+    }
+
     body {
       display: flex;
       flex-direction: column;
@@ -54,6 +63,10 @@
 </head>
 <body>
   <script>
+    // CSSでズームを無効化
+    document.documentElement.style.touchAction = "manipulation";
+    document.documentElement.style.msTouchAction = "manipulation";
+
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     document.body.appendChild(canvas);
@@ -448,6 +461,13 @@
 
     // ダブルタップによるズームを無効化
     let lastTouchEnd = 0;
+    document.addEventListener("touchstart", (event) => {
+      const now = new Date().getTime();
+      if (now - lastTouchTime <= 300) { // 300ms以内の連続タップを検出
+        event.preventDefault(); // デフォルトのズーム動作を無効化
+      }
+      lastTouchTime = now;
+    });
     document.addEventListener("touchend", (event) => {
       const now = new Date().getTime();
       if (now - lastTouchEnd <= 300) { // 300ms以内の連続タップを検出
