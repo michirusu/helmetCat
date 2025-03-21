@@ -446,6 +446,16 @@
       }
     }
 
+    // ダブルタップによるズームを無効化
+    let lastTouchEnd = 0;
+    document.addEventListener("touchend", (event) => {
+      const now = new Date().getTime();
+      if (now - lastTouchEnd <= 300) { // 300ms以内の連続タップを検出
+        event.preventDefault(); // デフォルトのズーム動作を無効化
+      }
+      lastTouchEnd = now;
+    });
+
     function handleTouch(event) {
       if (gameOver) return;
       const touchX = event.touches[0].clientX;
