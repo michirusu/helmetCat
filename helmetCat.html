@@ -87,8 +87,11 @@
   </style>
 </head>
 <body>
-  <!-- 音符アイコン -->
-  <div class="music-icon" id="musicIcon" onclick="changeMusic()">♪</div>
+  <!-- ゲームエリア -->
+  <div id="gameArea">
+    <!-- 音符アイコン -->
+    <div class="music-icon" id="musicIcon" onclick="changeMusic()">♪</div>
+  </div>
 
   <script>
     // 音楽ファイルのリスト（最後の要素は「音楽オフ」）
@@ -197,6 +200,38 @@
 
     // ページ読み込み時に初期化
     window.onload = initializeMusic;
+
+    // ゲームを一時停止する関数
+    function pauseGame() {
+      if (isPaused) return;
+
+      isPaused = true;
+
+      // 音楽を一時停止
+      if (audio) {
+        audio.pause();
+      }
+
+      // 一時停止オーバーレイを表示
+      const pauseOverlay = document.getElementById("pauseOverlay");
+      pauseOverlay.style.display = "flex";
+    }
+
+    // ゲームを再開する関数
+    function resumeGame() {
+      if (!isPaused) return;
+
+      isPaused = false;
+
+      // 音楽を再開
+      if (audio) {
+        audio.play();
+      }
+
+      // 一時停止オーバーレイを非表示
+      const pauseOverlay = document.getElementById("pauseOverlay");
+      pauseOverlay.style.display = "none";
+    }
 
     // CSSでズームを無効化
     document.documentElement.style.touchAction = "manipulation";
@@ -308,7 +343,15 @@
       new Audio("https://www.myinstants.com/media/sounds/omae-wa-mou-shindeiru.mp3"), // score<1500
       new Audio("https://www.myinstants.com/media/sounds/yatta-desu-ne.mp3"),             // score<1800
       new Audio("https://www.myinstants.com/media/sounds/wot-mako-oh-sugoi-na.mp3"), // score<2000
-      new Audio("https://www.myinstants.com/media/sounds/crowd-applause-cheer-small-group_tUQjCQt.mp3")    // score>=2000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/crowd-applause-cheer-small-group_tUQjCQt.mp3"),    // score>=2000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/nakayama-kinnikun-power.mp3"),    // score>=3000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/yeehaw-you-did-it.mp3"),    // score>=4000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/sugoi_g7MnyIe.mp3"),    // score>=5000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/dorakue-reberuatsupuyin.mp3"),    // score>=6000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/akiramennayo-song-gang-xiu-zao.mp3"),    // score>=7000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/congratulations-you-are-the-winner.mp3"),    // score>=8000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/we-are-the-champions-copia.mp3"),    // score>=9000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/you-are-the-best.mp3")    // score>=10000 Huge applause
     ];
 
     const obstacleImages = [
@@ -694,14 +737,14 @@
     let lastTouchEnd = 0;
     document.addEventListener("touchstart", (event) => {
       const now = new Date().getTime();
-      if (now - lastTouchTime <= 300) { // 300ms以内の連続タップを検出
+      if (now - lastTouchTime <= 500) { // 300ms以内の連続タップを検出
         event.preventDefault(); // デフォルトのズーム動作を無効化
       }
       lastTouchTime = now;
     });
     document.addEventListener("touchend", (event) => {
       const now = new Date().getTime();
-      if (now - lastTouchEnd <= 300) { // 300ms以内の連続タップを検出
+      if (now - lastTouchEnd <= 500) { // 500ms以内の連続タップを検出
         event.preventDefault(); // デフォルトのズーム動作を無効化
       }
       lastTouchEnd = now;
