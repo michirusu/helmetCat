@@ -330,6 +330,7 @@
     const gameOverSound = new Audio("https://www.myinstants.com//media/sounds/gukii-xiao-guo-yin.mp3");
     //    const replaySound = new Audio("https://www.myinstants.com/media/sounds/nintendo-game-boy-startup.mp3");
     const waterSound = new Audio("https://www.myinstants.com/media/sounds/water-droplet-drip.mp3");
+    const yaKinnikunSound = new Audio("https://www.myinstants.com/media/sounds/nakayama-kinnikun-ya.mp3");
 
     const applauseSounds = [
       // new Audio("https://www.myinstants.com/media/sounds/musuka-ren-gomi.mp3"), // Musuka gomi
@@ -351,7 +352,7 @@
       new Audio("https://www.myinstants.com/media/sounds/akiramennayo-song-gang-xiu-zao.mp3"),    // score>=7000 Huge applause
       new Audio("https://www.myinstants.com/media/sounds/congratulations-you-are-the-winner.mp3"),    // score>=8000 Huge applause
       new Audio("https://www.myinstants.com/media/sounds/we-are-the-champions-copia.mp3"),    // score>=9000 Huge applause
-      new Audio("https://www.myinstants.com/media/sounds/you-are-the-best.mp3")    // score>=10000 Huge applause
+      new Audio("https://www.myinstants.com/media/sounds/spongebob-comedy-ending.mp3"),    // score>=10000 Huge applause
     ];
 
     const obstacleImages = [
@@ -436,10 +437,47 @@
         setTimeout(() => {
           applauseSounds[4].play();
         }, 850); // 0.85 second delay
-      } else {
+      } else if (score < 3000) {
         setTimeout(() => {
           applauseSounds[5].play();
-        }, 500); // 0.5 second delay
+        }, 850); // 0.85 second delay
+      } else if (score < 4000) {
+        setTimeout(() => {
+          applauseSounds[6].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 5000) {
+        setTimeout(() => {
+          applauseSounds[7].volume = 0.6;
+          applauseSounds[7].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 6000) {
+        setTimeout(() => {
+          applauseSounds[8].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 7000) {
+        setTimeout(() => {
+          applauseSounds[9].volume = 0.7;
+          applauseSounds[9].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 8000) {
+        setTimeout(() => {
+          applauseSounds[10].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 9000) {
+        setTimeout(() => {
+          applauseSounds[11].volume = 0.5;
+          applauseSounds[11].play();
+        }, 850); // 0.85 second delay
+      } else if (score < 10000) {
+        setTimeout(() => {
+          applauseSounds[12].volume = 0.5;
+          applauseSounds[12].play();
+        }, 850); // 0.85 second delay
+      } else {
+        setTimeout(() => {
+          applauseSounds[12].volume = 0.75;
+          applauseSounds[13].play();
+        }, 850); // 0.85 second delay
       }
     }
 
@@ -612,6 +650,8 @@
           } else if (o.isWater) {
             // 💧水に当たった場合（画面上にある全ての障害物が消える）
             waterSound.play();
+            yaKinnikunSound.volume = 0.7;
+            yaKinnikunSound.play();
             obstacles = [];
             obstacleSpeed = Math.min((obstacleSpeed - 1), 8);
             spawnInterval = Math.min(Math.max(spawnInterval + 200, 400), 800);
