@@ -84,6 +84,22 @@
       transform: scale(1.2);
       /* ホバー時に拡大 */
     }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .blink {
+      animation: blink 1s infinite;
+    }
   </style>
 </head>
 <body>
@@ -524,9 +540,8 @@
 
       // ハイスコア更新メッセージを追加
       const highScoreMessage = isHighScoreUpdated
-        ? `<p style="color: #FFD700; font-size: 22px; margin-top: 10px;">Highest Score EVER!!</p>`
+        ? `<p style="color: #FFD700; font-size: 22px; margin-top: 10px;" class="blink">Highest Score EVER!!</p>`
         : "";
-
       let content = `
       <div style="background: black; padding: 20px; border-radius: 10px; text-align: center;">
           <h2>Game Over!</h2>
