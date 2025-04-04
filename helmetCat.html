@@ -100,6 +100,13 @@
     .blink {
       animation: blink 1s infinite;
     }
+
+    /* Prevent text or elements from being selected */
+    * {
+      user-select: none;
+      -webkit-user-select: none; /* For Safari and Chrome */
+      -ms-user-select: none; /* For Internet Explorer */
+    }
   </style>
 </head>
 <body>
